@@ -12,6 +12,8 @@ from scipy import signal
 
 from myfunctions import clip16
 
+from streaming import wavstream
+
 #####Making variables global to switch between class and function#####
 gain1 = 0 
 gain2 = 0
@@ -73,27 +75,15 @@ def updatef3():
 #########Class Function Initialisation#############  
 class Threading_func():
   def __init__(self):
-
-        wavfile = 'auth_mono_large.wav'
-
-
-        #wavfile = 'audio_1_mono.wav'
-
-        #wavfile = 'audio_1_mono.wav'
-
-        print("Play the wave file %s." % wavfile)
-        # Open wave file (should be mono channel)
-        self.wf = wave.open( wavfile, 'rb' )
-        # Read the wave file properties
-        self.num_channels = self.wf.getnchannels()       	# Number of channels
-        self.RATE = self.wf.getframerate()                # Sampling rate (frames/second)
-        self.signal_length  = self.wf.getnframes()       	# Signal length
-        self.width = self.wf.getsampwidth()       		# Number of bytes per sample
-        print("The file has %d channel(s)."            % self.num_channels)
-        print("The frame rate is %d frames/second."    % self.RATE)
-        print("The file has %d frames."                % self.signal_length)
-        print("There are %d bytes per sample."         % self.width)
-
+  
+        self.num_channels = 2         # Number of channels
+        self.RATE = 44100        # Sampling rate (frames/second)
+        
+        self.udpstream = wavstream(9001, "192.168.12.3")
+        self.udpthread = threading.Thread(target=self.udpstream.start)
+        self.udpthread.start()
+        
+        
    ########  Difference equation coefficients for Low Shelving filters   #########
         self.fc = 500
         self.V = 0
@@ -108,7 +98,7 @@ class Threading_func():
         self.a2 =  (1 - math.sqrt(2)*K + (K**2))/(1 + math.sqrt(2)*K + K**2)
         
    ########  Difference equation coefficients for high shelving filter   ######
-        self.fc_h = 10000	#cut odd frequency for high shelving filter
+        self.fc_h = 10000    #cut odd frequency for high shelving filter
         self.V_h = 0
         
         K_h = math.tan(math.pi * self.fc_h / self.RATE)
@@ -143,7 +133,7 @@ class Threading_func():
                 input       = False,
                 output      = True )
 
-        BLOCKSIZE = 512
+        BLOCKSIZE = 882
         
         # Create block (initialize to zero)
         output_block = [0 for n in range(0, BLOCKSIZE)]
@@ -151,10 +141,6 @@ class Threading_func():
         self.y2 = [0 for n in range(0, BLOCKSIZE)]
         self.y3 = [0 for n in range(0, BLOCKSIZE)]
         x = [0 for n in range(0, BLOCKSIZE)]
-        
-        # Number of blocks in wave file
-        
-        num_blocks = int(math.floor(self.signal_length/BLOCKSIZE))
 
         
         self.a0 = 1
@@ -168,10 +154,12 @@ class Threading_func():
         self.b_p = [self.b6 ,self.b7, self.b8]
         self.a_p = [self.a0, self.a5 ,self.a6]
 
-        
-        for i in range(0, num_blocks):
-
-                input_string = self.wf.readframes(BLOCKSIZE)
+        index=0
+        try:
+            while True:
+                while len(self.udpstream.data) <= index: continue
+                input_string = self.udpstream.data[index]
+                index=index+1
                 input_tuple = struct.unpack(str(BLOCKSIZE)+'h' , input_string)  # One-element tuple
                 x=input_tuple
                 
@@ -180,9 +168,6 @@ class Threading_func():
                 self.y3 = sp.signal.lfilter(self.b_p,self.a_p,self.y2)        #PF
 
                 output_value = self.y3
-
-                
- 
                 
                 #sys.exit(0)
                                
@@ -208,7 +193,7 @@ class Threading_func():
                 
 
                 ###############################  High pass   ##################################
-                self.fc_h = getf3()	#cut odd frequency for high shelving filter  
+                self.fc_h = getf3()    #cut odd frequency for high shelving filter  
                 K_h = math.tan(math.pi * self.fc_h / self.RATE)
                 G_h = 10**(self.V_h/20)                                
                 self.b3 = (G_h + math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
@@ -252,10 +237,12 @@ class Threading_func():
                 #print self.fc_h
                 #print self.fc_p
 
-        print("**** Done ****")
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+        except KeyboardInterrupt:
+            udpstream.kill_process = True        
+            print("**** Done ****")
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
         
 
 def RESET_RESPONSE():
@@ -291,10 +278,10 @@ GUI.geometry("600x400+300+300")
 GUI.configure(background='brown')
 
 Label(GUI, 
-		 text="PARAMETRIC MUSIC EQUALISER",
-		 fg = "white",
-		 bg = "black",
-		 font = "Helvetica 16 bold ").pack()
+         text="PARAMETRIC MUSIC EQUALISER",
+         fg = "white",
+         bg = "black",
+         font = "Helvetica 16 bold ").pack()
 
 ###slider 1
 scale1 = Scale( GUI, from_=0, to_=50 ,command=update_values_1 )
