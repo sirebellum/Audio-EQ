@@ -13,6 +13,7 @@ from scipy import signal
 from myfunctions import clip16
 
 from streaming import wavstream
+import socket
 
 #####Making variables global to switch between class and function#####
 gain1 = 0 
@@ -76,6 +77,8 @@ def updatef3():
 class Threading_func():
   def __init__(self):
   
+        self.kill = False
+
         self.num_channels = 2         # Number of channels
         self.RATE = 44100        # Sampling rate (frames/second)
         
@@ -155,8 +158,16 @@ class Threading_func():
         self.a_p = [self.a0, self.a5 ,self.a6]
 
         index=0
-        try:
-            while True:
+
+        UDP_IP = "192.168.12.4"
+        UDP_PORT = 9900
+        MESSAGE = "ENGAGE"
+
+        sock = socket.socket(socket.AF_INET, # Internet
+                             socket.SOCK_DGRAM) # UDP
+        sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
+
+        while not self.kill:
                 while len(self.udpstream.data) <= index: continue
                 input_string = self.udpstream.data[index]
                 index=index+1
@@ -237,12 +248,13 @@ class Threading_func():
                 #print self.fc_h
                 #print self.fc_p
 
-        except KeyboardInterrupt:
-            udpstream.kill_process = True        
-            print("**** Done ****")
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
+        udpstream.kill_process = True
+        MESSAGE = "DISENGAGE"
+        sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
+        print("**** Done ****")
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
         
 
 def RESET_RESPONSE():
@@ -339,8 +351,8 @@ button4.pack()
 
 
 #####infinite loop ( a must for GUI)
-GUI.mainloop()
+try: GUI.mainloop()
 
-
-
-  
+except KeyboardInterrupt:
+    a.kill = True
+    exit("interrupted")
