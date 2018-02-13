@@ -8,7 +8,7 @@ def clip16( x ):
         elif x[i] < -32768:
             x[i] = -32768
         else:
-            x[i] = x[i]
+            x[i] = int(x[i])
            
     return x
 

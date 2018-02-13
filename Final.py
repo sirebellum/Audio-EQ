@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 import threading
 #import time
 import pyaudio
@@ -172,7 +172,7 @@ class Threading_func():
         for i in range(0, num_blocks):
 
                 input_string = self.wf.readframes(BLOCKSIZE)
-                input_tuple = struct.unpack('h' * BLOCKSIZE , input_string)  # One-element tuple
+                input_tuple = struct.unpack(str(BLOCKSIZE)+'h' , input_string)  # One-element tuple
                 x=input_tuple
                 
                 self.y1 = sp.signal.lfilter(self.b_l,self.a_l,x)        #LP
@@ -187,9 +187,10 @@ class Threading_func():
                 #sys.exit(0)
                                
                 # Compute output value
-                output_value = clip16(output_value)    # Number
+                output_list = list(output_value)
+                output_list = clip16(output_list)    # Number
                 # Convert output value to binary string
-                output_string = struct.pack('h'* BLOCKSIZE, *output_value)
+                output_string = struct.pack(str(BLOCKSIZE)+'h', *output_list)
                 
                 # Write binary string to audio stream
                 stream.write(output_string)                                
