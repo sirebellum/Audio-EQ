@@ -1,6 +1,6 @@
 from tkinter import *
 import threading
-#import time
+import time
 import pyaudio
 import wave
 import struct
@@ -77,13 +77,14 @@ def updatef3():
 class Threading_func():
   def __init__(self):
   
-        self.kill = False
+        self.kill_process = False
 
         self.num_channels = 2         # Number of channels
         self.RATE = 44100        # Sampling rate (frames/second)
         
-        self.udpstream = wavstream(9001, "192.168.12.3")
+        self.udpstream = wavstream(9001, "172.24.146.182")
         self.udpthread = threading.Thread(target=self.udpstream.start)
+        self.udpthread.daemon = True
         self.udpthread.start()
         
         
@@ -159,15 +160,7 @@ class Threading_func():
 
         index=0
 
-        UDP_IP = "192.168.12.4"
-        UDP_PORT = 9900
-        MESSAGE = "ENGAGE"
-
-        sock = socket.socket(socket.AF_INET, # Internet
-                             socket.SOCK_DGRAM) # UDP
-        sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
-
-        while not self.kill:
+        while not self.kill_process:
                 while len(self.udpstream.data) <= index: continue
                 input_string = self.udpstream.data[index]
                 index=index+1
@@ -249,8 +242,6 @@ class Threading_func():
                 #print self.fc_p
 
         self.udpstream.kill_process = True
-        MESSAGE = "DISENGAGE"
-        sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
         print("**** Done ****")
         stream.stop_stream()
         stream.close()
@@ -280,6 +271,7 @@ def ROCK_RESPONSE():
 ##########Thread############
 a = Threading_func()
 thread = threading.Thread(target=a.Pythread) #Thread for object "a" of class Thread
+thread.daemon = True
 thread.start()
 
 ###### GUI ########
@@ -348,10 +340,27 @@ button3.pack()
 button4 = Button( GUI, text='FLAT',width=100, command = FLAT_RESPONSE)
 button4.pack()
 
+###LED PI Communication###
+UDP_IP = "172.24.139.225"
+UDP_PORT = 9900
+MESSAGE = "ENGAGE"
+
+sock = socket.socket(socket.AF_INET, # Internet
+                     socket.SOCK_DGRAM) # UDP
+sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
 
 #####infinite loop ( a must for GUI)
 try: GUI.mainloop()
 
 except KeyboardInterrupt:
-    a.kill = True
+    MESSAGE = "DISENGAGE"
+    sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
+    a.kill_process = True
+    time.sleep(1)
     exit("interrupted")
+    
+MESSAGE = "DISENGAGE"
+sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
+a.kill_process = True
+time.sleep(1)
+exit("Done!")
