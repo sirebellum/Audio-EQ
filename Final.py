@@ -248,7 +248,7 @@ class Threading_func():
                 #print self.fc_h
                 #print self.fc_p
 
-        udpstream.kill_process = True
+        self.udpstream.kill_process = True
         MESSAGE = "DISENGAGE"
         sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, UDP_PORT))
         print("**** Done ****")
@@ -280,7 +280,6 @@ def ROCK_RESPONSE():
 ##########Thread############
 a = Threading_func()
 thread = threading.Thread(target=a.Pythread) #Thread for object "a" of class Thread
-thread.daemon = True 
 thread.start()
 
 ###### GUI ########
