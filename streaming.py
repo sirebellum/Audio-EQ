@@ -13,6 +13,7 @@ class wavstream:
     def start(self):
 
         while not self.kill_process:
-            self.data.append(self.sock.recv(1764)) # buffer size is 1024 bytes
+            self.data.append(self.sock.recv(4096)) # buffer size is 1024 bytes
+            self.packet_size = len(self.data[0])
 
         print("**** Stream Killed ****")
