@@ -1,0 +1,12 @@
+Set of scripts written to stream raw audio data via udp packets. (WAV files contain raw audio as data, so "raw audio" and "wav" are used somewhat interchangeably)
+
+Description of files:
+ Final.py - Receives udp packets and plays audio. Usage: "python3 Final.py"
+  myfunctions.py - clipping function
+  streaming.py - receive udp wav stream (class)
+
+ led.py - Turn on LED at RPi. Usage: "python led.py"
+
+ stream.sh - uses gstreamer to stream mic or wav file Usage: "./stream.sh IP_ADDRESS [optional_wav_file]"
+
+IP addresses within Final.py and led.py need to be changed as needed.
