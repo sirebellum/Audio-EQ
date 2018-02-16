@@ -40,8 +40,6 @@ class Threading_func():
             stream_enable = False
             pass
         
-        BLOCKSIZE = 882
-        
         index=0
         while not self.kill_process:
             
