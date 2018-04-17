@@ -4,10 +4,17 @@ import pyaudio
 import wave
 
 from myfunctions import clip16
+import argparse
 
 from streaming import wavstream
 import socket
 import paho.mqtt.client as mqtt
+
+##########Parse CLI Arguments#############
+parser = argparse.ArgumentParser()
+parser.add_argument("RECEIVE_IP", help="Specify IP address to receive at")
+parser.add_argument("PUBLISH_IP", help="Specify IP address to publish MQTT at")
+args = parser.parse_args()
 
 #########Class Function Initialisation#############
 class Threading_func():
@@ -19,7 +26,7 @@ class Threading_func():
         self.RATE = 44100        # Sampling rate (frames/second)
 
         #Initiate udp stream
-        self.udpstream = wavstream(9001, "127.0.0.1") #IP of local machine interface where receiving
+        self.udpstream = wavstream(9001, args.RECEIVE_IP) #IP of local machine interface where receiving
         self.udpthread = threading.Thread(target=self.udpstream.start)
         self.udpthread.daemon = True #Kill thread when parent is dead
         self.udpthread.start()
@@ -73,7 +80,7 @@ time.sleep(1)
 print("")
 
 mqttc = mqtt.Client("python_pub")
-mqttc.connect("192.168.1.14", 1883) # IP of RPi running LEDs
+mqttc.connect(args.PUBLISH_IP, 1883) # IP of RPi running LEDs
 #Turn on LED
 mqttc.publish("test/led", "ENGAGE")
 try:
