@@ -80,20 +80,24 @@ time.sleep(1)
 print("")
 
 mqttc = mqtt.Client("python_pub")
-mqttc.connect(args.PUBLISH_IP, 1883) # IP of RPi running LEDs
-#Turn on LED
-mqttc.publish("test/led", "ENGAGE")
+if args.PUBLISH_IP != "0":
+  mqttc.connect(args.PUBLISH_IP, 1883) # IP of RPi running LEDs
+  #Turn on LED
+  mqttc.publish("test/led", "ENGAGE")
+
 try:
     input("Press enter to quit...")
-    mqttc.publish("test/led", "DISENGAGE")
-    mqttc.disconnect()
+    if args.PUBLISH_IP != "0":
+      mqttc.publish("test/led", "DISENGAGE")
+      mqttc.disconnect()
     a.kill_process = True
     time.sleep(1)
     exit("Done!")
 
 except KeyboardInterrupt:
-    mqttc.publish("test/led", "DISENGAGE")
-    mqttc.disconnect()
+    if args.PUBLISH_IP != "0":
+      mqttc.publish("test/led", "DISENGAGE")
+      mqttc.disconnect()
     a.kill_process = True
     time.sleep(1)
     exit("interrupted")
